@@ -14,12 +14,14 @@ class Database():
         self.cursor.execute("SELECT version();")
         print(f"Вы подключены к - {self.cursor.fetchone()}")
 
+    # Add man to database. Registration
     async def create_player(self, nickname='None', first_name='None', last_name='None', employee=False, tg_id=0,
                             chat_id=0):
         self.cursor.execute(f"""INSERT INTO users (nickname, first_name, last_name, employee, tg_id, chat_id)
                         VALUES ('{nickname}', '{first_name}', '{last_name}', {employee}, {tg_id}, {chat_id}) """)
         self.connection.commit()
 
+    # Get user_id from tg_id
     async def get_user_id(self, tg_id='None'):
         self.cursor.execute(f"""SELECT
                                     public.users.user_id,
@@ -64,6 +66,7 @@ class Database():
         employee = self.cursor.fetchone()
         return employee
 
+    # Check existence person
     async def check_person(self, user_id='None'):
         self.cursor.execute(f"""select 
                                     user_id
@@ -88,6 +91,7 @@ class Database():
         self.cursor.execute(f"""INSERT INTO technic (user_id, game_id) VALUES ({user_id}, {game_id})""")
         self.connection.commit()
 
+    # For game_Technic
     async def get_active_tickets(self, tg_id='None'):
         technic = await self.get_user_id(tg_id=tg_id)
 
@@ -119,14 +123,14 @@ class Database():
                                 where ticket_id = {ticket_id}""")
         self.connection.commit()
 
-    async def get_points(self, user_id):
+    async def get_user_points(self, user_id):
         self.cursor.execute(f"""select user_id, points
                                 from users
                                 where user_id = {user_id}""")
         points = self.cursor.fetchone()[1]
         return points
 
-    async def set_points(self, user_id, points, add_points):
+    async def set_points_to_user(self, user_id, points, add_points):
         points += int(add_points)
         self.cursor.execute(f"""update users
                                         set points = {points}

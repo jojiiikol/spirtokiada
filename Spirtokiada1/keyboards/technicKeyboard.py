@@ -1,10 +1,11 @@
 from aiogram import types
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 
-def get_list_active_tickets():
+def get_main_keyboard():
     keyboard = ReplyKeyboardBuilder()
     keyboard.add(
-        types.KeyboardButton(text="Показать список билетов🎫")
+        types.KeyboardButton(text="Показать список билетов🎫"),
+        types.KeyboardButton(text="Начислить баллы победителю")
     )
 
     return keyboard
@@ -27,5 +28,12 @@ def set_confirm_keyboard():
     )
     return keyboard
 
+def set_confirm_keyboard_for_victory():
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(
+        types.InlineKeyboardButton(text="Подтвердить ✅", callback_data="victory_ok"),
+        types.InlineKeyboardButton(text="Отменить ❌", callback_data="victory_cancel")
+    )
+    return keyboard
 
-# Добавить клаву с выводом и удалением билетов
+

@@ -49,8 +49,8 @@ async def update_points(message: types.Message, state:FSMContext):
 async def add_points(message: types.Message, state:FSMContext):
     await state.update_data(points=message.text)
     data = await state.get_data()
-    points = await __main__.db.get_points(data['user_id'])
-    await __main__.db.set_points(data['user_id'], points, data['points'])
+    points = await __main__.db.get_user_points(data['user_id'])
+    await __main__.db.set_points_to_user(data['user_id'], points, data['points'])
     await state.clear()
 
 

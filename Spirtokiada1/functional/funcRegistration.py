@@ -136,6 +136,6 @@ async def set_zone(callback: types.CallbackQuery, state: FSMContext):
     await __main__.db.set_zone_technic(user_id=user_id, game_id=data["zone"])
     await callback.message.answer(
         text="Твоя задача - следить за билетами и обнулять их\nКак это делать?\nК тебе приходит игрок и говорит, что купил билет на твою игру\nТы жамкаешь кнопку для вывода билетов на экран --> Ищешь его билет у себя --> Нажимаешь на билет и обнуляешь его --> Игрок играет - игрок счастлив\n\nЕсли билета игрока у тебя нет в списке - попроси показать его телефон и тыкни у него на кнопку 'Билеты': \n\t\t\t\tЕсли у него нет билета на твою игру, то он мошенник и смело отправляй его на кассу\n\t\t\t\tЕсли у него есть билет, то пиши @jojiiikol номер билета, название игры, номер игрока",
-        reply_markup=keyboards.technicKeyboard.get_list_active_tickets().as_markup(resize_keyboard=True,
-                                                                                   input_field_placeholder="Жамкай чаще! :)"))
+        reply_markup=keyboards.technicKeyboard.get_main_keyboard().as_markup(resize_keyboard=True,
+                                                                             input_field_placeholder="Жамкай чаще! :)"))
     await state.clear()

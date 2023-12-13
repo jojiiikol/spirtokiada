@@ -7,11 +7,53 @@ import __main__
 
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
+
 routerTechnic = Router()
+
 
 class Change_status(StatesGroup):
     ticket_id = State()
     confirm = State()
+
+
+class Set_point(StatesGroup):
+    player_id = State()
+    confirm = State()
+
+
+@routerTechnic.message(F.text == "Начислить баллы победителю")
+async def set_points(message: types.Message, state: FSMContext):
+    employee = await __main__.db.check_employee(tg_id=message.from_user.id)
+    if employee:
+        await message.answer("Введите номер игрока")
+        await state.set_state(Set_point.player_id)
+    else:
+        await message.answer(text="Тебе запрещено тут быть >:(")
+
+
+@routerTechnic.message(Set_point.player_id)
+async def set_player(message: types.Message, state: FSMContext):
+    await state.update_data(player_id=message.text)
+    await message.answer(text=f"Вы выбрали игрока под номером: <b>{message.text}</b>",
+                         reply_markup=keyboards.technicKeyboard.set_confirm_keyboard_for_victory().as_markup())
+    await state.set_state(Set_point.confirm)
+
+# !!!ДОПИСАТЬ ЧАСТЬ!!!
+@routerTechnic.callback_query(Set_point.confirm, F.data.contains('victory_'))
+async def set_victory(callback: types.CallbackQuery, state:FSMContext):
+    choice = callback.data.split('_')[1]
+    await state.update_data(confirm=choice)
+    if choice == 'ok':
+        await callback.answer()
+        await callback.message.delete()
+        await callback.message.answer("Работает")
+        await state.clear()
+    if choice == 'cancel':
+        await callback.answer()
+        await callback.message.delete()
+        await callback.message.answer("Отмена")
+        await state.clear()
+
 
 @routerTechnic.message(F.text == "Показать список билетов🎫")
 async def show_tickets(message: types.Message, state: FSMContext):
@@ -24,6 +66,7 @@ async def show_tickets(message: types.Message, state: FSMContext):
     else:
         await message.answer(text="Тебе запрещено тут быть >:(")
 
+
 @routerTechnic.callback_query(Change_status.ticket_id, F.data.contains("change_status_tic"))
 async def confirm_change_status(callback: types.CallbackQuery, state: FSMContext):
     ticket_id = callback.data.split("_")[3]
@@ -32,8 +75,10 @@ async def confirm_change_status(callback: types.CallbackQuery, state: FSMContext
     await state.update_data(user_id=f"{user_id}")
     await callback.answer()
     await callback.message.delete()
-    await callback.message.answer(text=f"Билет <b>№{ticket_id}</b>", reply_markup=keyboards.technicKeyboard.set_confirm_keyboard().as_markup())
+    await callback.message.answer(text=f"Билет <b>№{ticket_id}</b>",
+                                  reply_markup=keyboards.technicKeyboard.set_confirm_keyboard().as_markup())
     await state.set_state(Change_status.confirm)
+
 
 @routerTechnic.callback_query(Change_status.confirm, F.data.contains("change_status_"))
 async def change_status_ticket(callback: types.CallbackQuery, state: FSMContext):
@@ -48,5 +93,3 @@ async def change_status_ticket(callback: types.CallbackQuery, state: FSMContext)
         await callback.answer()
         await callback.message.edit_text(text=f"Билет <b>№{data['ticket_id']}</b>\n---------\nОТМЕНА ИСПОЛЬЗОВАНИЯ")
         await state.clear()
-
-

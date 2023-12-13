@@ -2,11 +2,9 @@ from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram import types
 
-from aiogram.types import FSInputFile
 import __main__
 
 import keyboards.playerKeyboards
-from keyboards import playerKeyboards
 
 routerPlayer = Router()
 
@@ -50,7 +48,7 @@ async def get_raiting(message: types.Message):
 @routerPlayer.message(F.text == "Правила🧐")
 async def get_rule(message: types.Message):
     await message.answer("Выбери игру, и я расскажу тебе правила :)",
-                         reply_markup=playerKeyboards.get_rules_keyboard_for_player().as_markup())
+                         reply_markup=keyboards.playerKeyboards.get_rules_keyboard_for_player().as_markup())
 
 
 @routerPlayer.callback_query(F.data.contains("rule_game"))
