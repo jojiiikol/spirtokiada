@@ -19,6 +19,7 @@ class Change_status(StatesGroup):
 class Set_point(StatesGroup):
     player_id = State()
     confirm = State()
+    points = State()
 
 
 @routerTechnic.message(F.text == "Начислить баллы победителю")
@@ -31,14 +32,26 @@ async def set_points(message: types.Message, state: FSMContext):
         await message.answer(text="Тебе запрещено тут быть >:(")
 
 
+
+
 @routerTechnic.message(Set_point.player_id)
 async def set_player(message: types.Message, state: FSMContext):
-    await state.update_data(player_id=message.text)
-    await message.answer(text=f"Вы выбрали игрока под номером: <b>{message.text}</b>",
-                         reply_markup=keyboards.technicKeyboard.set_confirm_keyboard_for_victory().as_markup())
-    await state.set_state(Set_point.confirm)
+    if message.text.isnumeric():
+        person = await __main__.db.check_person(user_id=message.text)
+        if person:
+            await state.update_data(player_id=message.text)
+            data = await state.get_data()
+            await message.answer(text=f"Вы выбрали игрока под номером: <b>{data['player_id']}</b>",
+                                 reply_markup=keyboards.technicKeyboard.set_confirm_keyboard_for_victory().as_markup())
+            await state.set_state(Set_point.confirm)
+        else:
+            await message.answer(text="Игрока с таким номером не существует\nВведите номер еще раз")
+    else:
+        await message.answer(text="Номер введен неверно, он должен состоять из цифр\nВведите номер еще раз")
 
-# !!!ДОПИСАТЬ ЧАСТЬ!!!
+
+
+
 @routerTechnic.callback_query(Set_point.confirm, F.data.contains('victory_'))
 async def set_victory(callback: types.CallbackQuery, state:FSMContext):
     choice = callback.data.split('_')[1]
@@ -46,13 +59,22 @@ async def set_victory(callback: types.CallbackQuery, state:FSMContext):
     if choice == 'ok':
         await callback.answer()
         await callback.message.delete()
-        await callback.message.answer("Работает")
-        await state.clear()
+        await callback.message.answer("Введите количество очков")
+        await state.set_state(Set_point.points)
     if choice == 'cancel':
         await callback.answer()
         await callback.message.delete()
         await callback.message.answer("Отмена")
         await state.clear()
+
+@routerTechnic.message(Set_point.points)
+async def get_points_to_player(message: types.Message, state: FSMContext):
+    await state.update_data(points=message.text)
+    data = await state.get_data()
+    points = await __main__.db.get_user_points(data['player_id'])
+    await __main__.db.set_points_to_user(data['player_id'], points, data['points'])
+    await state.clear()
+    await message.answer(text="Начислено")
 
 
 @routerTechnic.message(F.text == "Показать список билетов🎫")

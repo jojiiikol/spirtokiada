@@ -14,12 +14,33 @@ class Database():
         self.cursor.execute("SELECT version();")
         print(f"Вы подключены к - {self.cursor.fetchone()}")
 
-    # Add man to database. Registration
+    # Add people to database. Registration
     async def create_player(self, nickname='None', first_name='None', last_name='None', employee=False, tg_id=0,
                             chat_id=0):
-        self.cursor.execute(f"""INSERT INTO users (nickname, first_name, last_name, employee, tg_id, chat_id)
-                        VALUES ('{nickname}', '{first_name}', '{last_name}', {employee}, {tg_id}, {chat_id}) """)
+        query = f"""SELECT 
+                                COUNT(users.user_id),
+                                team.team_id
+                            FROM
+                                users INNER JOIN team on team.team_id = users.team_id
+                            GROUP BY
+                                team.team_id
+                            ORDER BY
+                                COUNT(users.user_id) ASC"""
+        self.cursor.execute(query)
+        team = self.cursor.fetchone()[1]
+
+        self.cursor.execute(f"""INSERT INTO users (nickname, first_name, last_name, employee, tg_id, chat_id, team_id)
+                        VALUES ('{nickname}', '{first_name}', '{last_name}', {employee}, {tg_id}, {chat_id}, {team}) """)
         self.connection.commit()
+
+        self.cursor.execute(f"""SELECT
+                                    team_name
+                                FROM
+                                    team
+                                Where
+                                    team_id = {team}""")
+        team_name = self.cursor.fetchone()[0]
+        return team_name
 
     # Get user_id from tg_id
     async def get_user_id(self, tg_id='None'):
@@ -135,6 +156,48 @@ class Database():
         self.cursor.execute(f"""update users
                                         set points = {points}
                                         where user_id = {user_id}""")
+        self.connection.commit()
+
+
+
+
+
+    async def get_team_points(self, tg_id):
+        query = f"SELECT team_id FROM users WHERE tg_id = {tg_id}"
+        self.cursor.execute(query)
+        team_id = self.cursor.fetchone()[0]
+
+        query = f"SELECT points FROM team WHERE team_id = {team_id}"
+        self.cursor.execute(query)
+        team_points = self.cursor.fetchone()[0]
+
+        return team_points, team_id
+
+    async def get_team_rating(self, tg_id):
+        team_points, team_id = await self.get_team_points(tg_id)
+        query = f"""select
+                        place
+                    from
+                        (select
+                        ROW_NUMBER() OVER(ORDER BY points DESC) as place,
+                        team_name,
+                        team_id
+                        from
+                         team
+                        ) as a
+                    where
+                        team_id = {team_id}"""
+        self.cursor.execute(query)
+        place = self.cursor.fetchone()[0]
+        text = f"Ваша команда имеет <b>{team_points}</b> очков и занимает <b>{place}</b> место!"
+        return text
+
+    async def set_points_to_team(self, tg_id, points):
+        team_points, team_id = await self.get_team_points(tg_id)
+        team_points += points
+
+        query = f"UPDATE team SET points={team_points} WHERE team_id={team_id}"
+        self.cursor.execute(query)
         self.connection.commit()
 
     async def get_all_tickets(self):

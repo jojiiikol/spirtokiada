@@ -42,7 +42,9 @@ async def get_tickets(message: types.Message):
 @routerPlayer.message(F.text == "Рейтинг🥇")
 async def get_raiting(message: types.Message):
     rating = await __main__.db.show_rating(message.from_user.id)
-    await message.answer(text=rating)
+    team_rating = await __main__.db.get_team_rating(message.from_user.id)
+    text = f"{rating}\n{team_rating}"
+    await message.answer(text=text)
 
 
 @routerPlayer.message(F.text == "Правила🧐")

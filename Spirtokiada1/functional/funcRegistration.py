@@ -37,19 +37,25 @@ async def command_reg(message: types.Message, state: FSMContext):
 
 @routerRegistartion.message(Registration.set_firstName)
 async def set_firstname(message: types.Message, state: FSMContext):
-    await state.update_data(firstName=message.text)
-    await message.answer(text="Напишите свою фамилию: ")
-    await state.set_state(Registration.set_lastName)
+    if message.text.isalpha():
+        await state.update_data(firstName=message.text)
+        await message.answer(text="Напишите свою фамилию: ")
+        await state.set_state(Registration.set_lastName)
+    else:
+        await message.answer(text="Можно использовать только буквы, введите имя еще раз")
 
 
 @routerRegistartion.message(Registration.set_lastName)
 async def set_lastname(message: types.Message, state: FSMContext):
-    await state.update_data(lastName=message.text)
-    await state.update_data(nickname=message.from_user.username)
-    await state.update_data(tg_id=message.from_user.id)
-    await state.update_data(chat_id=message.chat.id)
-    await message.answer(text="Кто ты, воин?", reply_markup=regKeyboards.get_reg_keyboard().as_markup())
-    await state.set_state(Registration.set_employee)
+    if message.text.isalpha():
+        await state.update_data(lastName=message.text)
+        await state.update_data(nickname=message.from_user.username)
+        await state.update_data(tg_id=message.from_user.id)
+        await state.update_data(chat_id=message.chat.id)
+        await message.answer(text="Кто ты, воин?", reply_markup=regKeyboards.get_reg_keyboard().as_markup())
+        await state.set_state(Registration.set_employee)
+    else:
+        await message.answer(text="Можно использовать только буквы, введите фамилию еще раз")
 
 
 @routerRegistartion.callback_query(Registration.set_employee, F.data.contains("role_"))
@@ -60,13 +66,13 @@ async def end_regisration(callback: types.CallbackQuery, state: FSMContext):
         await callback.message.delete()
         await state.update_data(employee="FALSE")
         user_data = await state.get_data()
-        await __main__.db.create_player(nickname=user_data['nickname'], first_name=user_data['firstName'],
+        team = await __main__.db.create_player(nickname=user_data['nickname'], first_name=user_data['firstName'],
                                         last_name=user_data['lastName'], employee=False, tg_id=user_data['tg_id'],
                                         chat_id=user_data['chat_id'])
 
         user_id = await __main__.db.get_user_id(callback.from_user.id)
         await callback.message.answer(
-            text=f"Спасибо!\nВаше имя: {user_data['firstName']} \nВаша фамилия: {user_data['lastName']} \nВаш номер: <b>{user_id}</b>")
+            text=f"Спасибо!\nВаше имя: {user_data['firstName']} \nВаша фамилия: {user_data['lastName']} \nВаш номер: <b>{user_id}</b>\nБог <b>{team}</b> избрал вас к себе...")
         await callback.message.answer(text="Прошу закрепить верхнее сообщение, чтобы не забыть ваш номер!",
                                       reply_markup=playerKeyboards.get_start_keyboard().as_markup(
                                           resize_keyboard=True,

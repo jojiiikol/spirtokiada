@@ -2,6 +2,7 @@ from aiogram import types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 import __main__
 
+
 def get_reg_keyboard():
     keyboard = InlineKeyboardBuilder()
     keyboard.add(
@@ -9,6 +10,7 @@ def get_reg_keyboard():
         types.InlineKeyboardButton(text="Организатор 👷‍♂️", callback_data="role_organization")
     )
     return keyboard
+
 
 def get_org_keyboard():
     keyboard = InlineKeyboardBuilder()
@@ -18,6 +20,7 @@ def get_org_keyboard():
     )
     return keyboard
 
+
 def get_technic_keyboard():
     keyboard = InlineKeyboardBuilder()
     game_list = __main__.db.show_game_list()
@@ -26,4 +29,5 @@ def get_technic_keyboard():
             types.InlineKeyboardButton(text=f"{game[1]}", callback_data=f"set_zone_{game[0]}")
         )
 
+    keyboard.adjust(1)
     return keyboard
